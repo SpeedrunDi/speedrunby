@@ -1,0 +1,28 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+// Static hosting serves exactly one 404 page — it is bilingual by design.
+---
+
+<Layout
+  locale="ru"
+  title="404 — Amankeldi Kydyraliev"
+  description="Страница не найдена / Page not found"
+  noindex
+>
+  <main id="main" class="container-edge flex min-h-svh flex-col items-start justify-center gap-6">
+    <p class="eyebrow">404</p>
+    <div class="flex flex-col gap-2">
+      <h1 class="text-ink" style="font-size: var(--text-display);">Страница не найдена</h1>
+      <p class="text-ink-2">Такой страницы нет. Возможно, ссылка устарела.</p>
+    </div>
+    <div class="flex flex-col gap-2" lang="en">
+      <h2 class="text-ink" style="font-size: var(--text-section);">Page not found</h2>
+      <p class="text-ink-2">This page does not exist. The link may be outdated.</p>
+    </div>
+    <div class="flex flex-wrap gap-3">
+      <a class="btn btn-primary" href="/">На главную</a>
+      <a class="btn btn-ghost" href="/en/">Back home (EN)</a>
+    </div>
+  </main>
+</Layout>

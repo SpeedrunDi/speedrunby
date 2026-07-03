@@ -1,0 +1,272 @@
+/* ============================================================
+   speedrunby design system — Tailwind v4, CSS-first.
+   Palette ported from v1 "Claude-lab": warm near-black ground,
+   clay accent, warm off-white ink. Dark is the default theme.
+   ============================================================ */
+
+@import 'tailwindcss';
+
+/* Self-hosted variable fonts. Each wght.css carries per-subset
+   @font-face blocks with unicode-range — browsers fetch only the
+   subsets a page actually uses (latin for EN, +cyrillic for RU). */
+@import '@fontsource-variable/bricolage-grotesque/wght.css';
+@import '@fontsource-variable/geist/wght.css';
+@import '@fontsource-variable/geist-mono/wght.css';
+
+/* ---------- raw palette (var indirection, theme-switchable) ---------- */
+:root {
+  /* dark — default "Claude-lab" */
+  --su-bg: #161311;
+  --su-bg-2: #1b1713;
+  --su-surface: #211c17;
+  --su-surface-2: #282118;
+  --su-ink: #f3ede4;
+  --su-ink-2: #bcb2a3;
+  --su-ink-3: #8a8072;
+  --su-clay: #e0855c;
+  --su-clay-bright: #f0a077;
+  --su-clay-tint: rgba(224, 133, 92, 0.12);
+  --su-clay-ring: rgba(224, 133, 92, 0.4);
+  --su-line: rgba(243, 237, 228, 0.09);
+  --su-line-strong: rgba(243, 237, 228, 0.17);
+  --su-on-clay: #1a120c;
+
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  --su-bg: #f6f1e9;
+  --su-bg-2: #efe9de;
+  --su-surface: #fbf8f2;
+  --su-surface-2: #f2ecdf;
+  --su-ink: #241d16;
+  --su-ink-2: #5b5245;
+  --su-ink-3: #8b8171;
+  --su-clay: #c25e38;
+  --su-clay-bright: #a94d2a;
+  --su-clay-tint: rgba(194, 94, 56, 0.1);
+  --su-clay-ring: rgba(194, 94, 56, 0.32);
+  --su-line: rgba(38, 30, 22, 0.11);
+  --su-line-strong: rgba(38, 30, 22, 0.2);
+  --su-on-clay: #fdf6ef;
+
+  color-scheme: light;
+}
+
+/* ---------- design tokens (Tailwind theme) ---------- */
+@theme inline {
+  --color-bg: var(--su-bg);
+  --color-bg-2: var(--su-bg-2);
+  --color-surface: var(--su-surface);
+  --color-surface-2: var(--su-surface-2);
+  --color-ink: var(--su-ink);
+  --color-ink-2: var(--su-ink-2);
+  --color-ink-3: var(--su-ink-3);
+  --color-clay: var(--su-clay);
+  --color-clay-bright: var(--su-clay-bright);
+  --color-clay-tint: var(--su-clay-tint);
+  --color-clay-ring: var(--su-clay-ring);
+  --color-line: var(--su-line);
+  --color-line-strong: var(--su-line-strong);
+  --color-on-clay: var(--su-on-clay);
+
+  --font-display: var(--font-display-active);
+  --font-sans: 'Geist Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --text-hero: clamp(2.6rem, 1.2rem + 5.5vw, 5.25rem);
+  --text-display: clamp(2rem, 1rem + 3.5vw, 3.5rem);
+  --text-section: clamp(1.6rem, 1.1rem + 2vw, 2.6rem);
+  --text-lead: clamp(1.02rem, 0.98rem + 0.3vw, 1.18rem);
+}
+
+/* Display face per document language: Bricolage has no Cyrillic, so RU
+   headings deliberately use Geist tuned to echo Bricolage's density
+   (weight 650, tight tracking) rather than an accidental fallback. */
+:root {
+  --font-display-active: 'Bricolage Grotesque Variable', 'Geist Variable', system-ui, sans-serif;
+}
+html[lang='ru'] {
+  --font-display-active: 'Geist Variable', system-ui, -apple-system, sans-serif;
+}
+
+/* ---------- base ---------- */
+@layer base {
+  * {
+    font-synthesis: none;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--su-bg);
+    color: var(--su-ink);
+    font-family: var(--font-sans);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+
+  /* theme transition only after first paint (theme-init adds the class) */
+  .theme-ready body,
+  .theme-ready .theme-transition {
+    transition:
+      background-color 0.25s ease,
+      color 0.25s ease;
+  }
+
+  ::selection {
+    background: var(--su-clay);
+    color: var(--su-on-clay);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--su-clay-bright);
+    outline-offset: 3px;
+    border-radius: 3px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display-active);
+    text-wrap: balance;
+    letter-spacing: -0.02em;
+  }
+  html[lang='ru'] :is(h1, h2, h3, h4) {
+    font-weight: 650;
+    letter-spacing: -0.035em;
+    line-height: 1.04;
+  }
+}
+
+/* ---------- components ---------- */
+@layer components {
+  .container-edge {
+    width: 100%;
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: clamp(1.15rem, 4vw, 2.75rem);
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6em;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--su-clay);
+  }
+  .eyebrow::before {
+    content: '';
+    width: 1.9rem;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.55;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.8rem 1.25rem;
+    border-radius: 0.625rem;
+    font-weight: 500;
+    font-size: 0.95rem;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition:
+      transform 0.18s var(--ease-premium),
+      background-color 0.2s,
+      border-color 0.2s,
+      color 0.2s;
+  }
+  .btn-primary {
+    background: var(--su-clay);
+    color: var(--su-on-clay);
+  }
+  .btn-primary:hover {
+    background: var(--su-clay-bright);
+    transform: translateY(-2px);
+  }
+  .btn-ghost {
+    border-color: var(--su-line-strong);
+    color: var(--su-ink);
+  }
+  .btn-ghost:hover {
+    border-color: var(--su-clay-ring);
+    background: var(--su-surface);
+    transform: translateY(-2px);
+  }
+
+  .card {
+    background: var(--su-surface);
+    border: 1px solid var(--su-line);
+    border-radius: 1rem;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--su-line-strong);
+    color: var(--su-ink-2);
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid var(--su-line-strong);
+    color: var(--su-ink-2);
+  }
+
+  /* skip rendering below-fold sections until needed */
+  .cv-section {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 48rem;
+  }
+
+  .sr-skip {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 100;
+    background: var(--su-clay);
+    color: var(--su-on-clay);
+    padding: 0.6rem 1rem;
+    border-radius: 0 0 0.5rem 0;
+  }
+  .sr-skip:focus-visible {
+    left: 0;
+  }
+}
+
+/* ---------- motion safety ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
