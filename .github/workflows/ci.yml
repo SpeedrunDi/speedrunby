@@ -76,7 +76,7 @@ jobs:
       - name: Check internal links offline
         uses: lycheeverse/lychee-action@v2
         with:
-          args: --offline --include-fragments dist
+          args: --offline --root-dir ${{ github.workspace }}/dist --include-fragments dist
           fail: true
 
   e2e:
