@@ -1,0 +1,39 @@
+# build output
+dist/
+# generated types
+.astro/
+
+# dependencies
+node_modules/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# environment variables — never commit secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# confidentiality needles — never committed (see scripts/check-confidential.mjs)
+.forbidden-terms.local
+
+# test & audit artifacts
+test-results/
+playwright-report/
+.lighthouseci/
+
+# image source originals (optimized output in public/images/ IS tracked)
+_originals/
+
+# worker local state
+.wrangler/
+
+# macOS-specific files
+.DS_Store
+
+# jetbrains setting folder
+.idea/
