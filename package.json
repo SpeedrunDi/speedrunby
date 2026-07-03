@@ -9,7 +9,13 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "check": "astro check",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:e2e": "playwright test",
+    "lhci": "lhci autorun"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
@@ -25,9 +31,20 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@eslint/js": "^10.0.1",
+    "@lhci/cli": "^0.15.1",
+    "@playwright/test": "^1.61.1",
     "@types/three": "^0.185.0",
+    "eslint": "^10.6.0",
+    "eslint-plugin-astro": "^2.1.1",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "prettier": "^3.9.4",
+    "prettier-plugin-astro": "^0.14.1",
+    "prettier-plugin-tailwindcss": "^0.8.0",
     "sharp": "^0.35.3",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.62.1"
   },
   "packageManager": "pnpm@10.34.4",
   "description": "Personal portfolio of Amankeldi Kydyraliev — Claude Certified Architect & fullstack engineer",
