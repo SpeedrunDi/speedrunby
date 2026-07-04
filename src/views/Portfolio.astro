@@ -1,0 +1,33 @@
+---
+import { type Locale } from '../i18n/types';
+import Header from '../sections/Header.astro';
+import Hero from '../sections/Hero.astro';
+import About from '../sections/About.astro';
+import Expertise from '../sections/Expertise.astro';
+import ClaudeProcess from '../sections/ClaudeProcess.astro';
+import Credentials from '../sections/Credentials.astro';
+import Stack from '../sections/Stack.astro';
+import Projects from '../sections/Projects.astro';
+import Testimonials from '../sections/Testimonials.astro';
+import Contact from '../sections/Contact.astro';
+import Footer from '../sections/Footer.astro';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+---
+
+<Header locale={locale} />
+<main id="main">
+  <Hero locale={locale} />
+  <About locale={locale} />
+  <Expertise locale={locale} />
+  <ClaudeProcess locale={locale} />
+  <Credentials locale={locale} />
+  <Stack locale={locale} />
+  <Projects locale={locale} />
+  <Testimonials locale={locale} />
+  <Contact locale={locale} />
+</main>
+<Footer locale={locale} />

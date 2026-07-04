@@ -1,0 +1,89 @@
+---
+import { type Locale } from '../i18n/types';
+import { t, useTranslations } from '../i18n/utils';
+import type { Project } from '../data/projects';
+
+interface Props {
+  locale: Locale;
+  project: Project;
+}
+const { locale, project: p } = Astro.props;
+const tr = useTranslations(locale);
+const github = !p.confidential ? p.links?.github : undefined;
+---
+
+<article
+  class:list={[
+    'fade-up card flex flex-col gap-3 p-6 transition-[transform,border-color,background-color] duration-200 hover:-translate-y-1',
+    p.flagship
+      ? 'border-clay-ring hover:bg-surface-2 bg-[radial-gradient(120%_150%_at_0%_0%,var(--su-clay-tint),transparent_55%)]'
+      : 'hover:border-line-strong hover:bg-surface-2',
+  ]}
+>
+  <div class="flex items-center justify-between gap-3">
+    <div class="flex flex-wrap items-center gap-2">
+      <span
+        class="text-clay border-clay-ring rounded-full border px-2.5 py-1 font-mono text-[0.62rem] tracking-[0.13em] uppercase"
+      >
+        {t(p.category, locale)}
+      </span>
+      {
+        p.flagship && (
+          <span class="bg-clay text-on-clay rounded-full px-2.5 py-1 font-mono text-[0.6rem] tracking-[0.12em] uppercase">
+            {tr('work.flagship')}
+          </span>
+        )
+      }
+      {
+        p.status === 'in-dev' && (
+          <span class="text-clay border-clay-ring rounded-full border border-dashed px-2.5 py-1 font-mono text-[0.6rem] tracking-[0.12em] uppercase">
+            {tr('work.indev')}
+          </span>
+        )
+      }
+    </div>
+    <span class="text-ink-3 font-mono text-xs whitespace-nowrap">{p.years}</span>
+  </div>
+
+  <h3
+    class="text-ink text-lg leading-snug font-semibold"
+    style="font-family: var(--font-display-active);"
+  >
+    {p.name}
+  </h3>
+  <p class="text-ink-2 flex-1 text-sm leading-relaxed">{t(p.description, locale)}</p>
+
+  <div class="mt-1 flex flex-wrap items-center gap-1.5">
+    {
+      p.tags.map((tag) => (
+        <span class="border-line text-ink-3 rounded-md border px-2 py-1 font-mono text-[0.67rem]">
+          {tag}
+        </span>
+      ))
+    }
+    {
+      github && (
+        <a
+          href={github}
+          target="_blank"
+          rel="noopener"
+          class="text-clay hover:text-clay-bright ml-auto inline-flex items-center gap-1 font-mono text-[0.7rem] tracking-wider uppercase"
+        >
+          {tr('work.source')}
+          <svg
+            class="h-3 w-3"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M7 17 17 7M8 7h9v9" />
+          </svg>
+        </a>
+      )
+    }
+  </div>
+</article>

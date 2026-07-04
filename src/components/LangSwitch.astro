@@ -1,0 +1,29 @@
+---
+import { type Locale } from '../i18n/types';
+import { altLocale, localePath, useTranslations } from '../i18n/utils';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const other = altLocale(locale);
+const t = useTranslations(locale);
+---
+
+<a
+  href={localePath(other)}
+  class="border-line-strong text-ink-2 hover:text-ink hover:border-clay-ring inline-flex h-9 items-center rounded-lg border px-3 font-mono text-xs tracking-wider uppercase transition-colors"
+  aria-label={t('a11y.langSwitch')}
+  data-lang-switch
+>
+  {other.toUpperCase()}
+</a>
+
+<script>
+  // preserve the current #hash when switching locale
+  document.querySelectorAll<HTMLAnchorElement>('[data-lang-switch]').forEach((a) => {
+    a.addEventListener('click', () => {
+      if (location.hash) a.href = a.href.split('#')[0] + location.hash;
+    });
+  });
+</script>

@@ -1,0 +1,45 @@
+---
+import { type Locale } from '../i18n/types';
+import { t, useTranslations } from '../i18n/utils';
+import { profile } from '../data/profile';
+import SectionHeader from '../components/SectionHeader.astro';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const tr = useTranslations(locale);
+---
+
+<section id="about" class="border-line border-t py-20 md:py-28" aria-labelledby="about-title">
+  <div class="container-edge grid items-start gap-12 lg:grid-cols-[1.2fr_1fr]">
+    <div>
+      <SectionHeader eyebrow={tr('about.eyebrow')} title={tr('about.title')} id="about-title" />
+      <div class="reveal-group mt-6 space-y-4" style="font-size: var(--text-lead);">
+        {profile.about.map((para) => <p class="text-ink-2 fade-up">{t(para, locale)}</p>)}
+      </div>
+    </div>
+
+    <dl
+      class="reveal-group border-line bg-line grid grid-cols-2 gap-px overflow-hidden rounded-2xl border"
+      aria-label={tr('about.eyebrow')}
+    >
+      {
+        profile.stats.map((s) => (
+          <div class="fade-up bg-bg p-5">
+            <dd
+              class="text-clay font-bold tabular-nums"
+              style="font-family: var(--font-display-active); font-size: clamp(1.8rem, 1.4rem + 1.6vw, 2.6rem);"
+            >
+              <span data-counter data-to={s.value}>
+                {s.value}
+              </span>
+              {s.suffix}
+            </dd>
+            <dt class="text-ink-2 mt-1 text-sm leading-snug">{t(s.label, locale)}</dt>
+          </div>
+        ))
+      }
+    </dl>
+  </div>
+</section>

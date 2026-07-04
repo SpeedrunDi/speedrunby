@@ -1,0 +1,77 @@
+---
+import { type Locale } from '../i18n/types';
+import { useTranslations } from '../i18n/utils';
+import { profile } from '../data/profile';
+
+interface Props {
+  locale: Locale;
+  compact?: boolean;
+}
+const { locale, compact = false } = Astro.props;
+const t = useTranslations(locale);
+---
+
+<aside
+  class:list={[
+    'border-line-strong bg-surface-2/70 relative rounded-2xl border text-center backdrop-blur-md',
+    compact ? 'w-56 px-4 pt-4 pb-3' : 'w-full max-w-xs px-6 pt-7 pb-6',
+  ]}
+  aria-label="Claude Certified Architect credential"
+  data-tilt
+>
+  <img
+    src="/badges/claude-architect.webp"
+    alt="Claude Certified Architect – Foundations badge, issued by Anthropic"
+    width="340"
+    height="340"
+    loading="eager"
+    decoding="async"
+    class:list={['mx-auto drop-shadow-xl', compact ? 'h-24 w-24' : 'h-36 w-36']}
+  />
+  <p
+    class:list={['text-ink mt-3 leading-snug font-semibold', compact ? 'text-sm' : 'text-base']}
+    style="font-family: var(--font-display-active);"
+  >
+    Claude Certified Architect<br />– Foundations
+  </p>
+  <p class="text-ink-3 mt-2 font-mono text-[0.65rem] tracking-[0.14em]">{t('badge.issuer')}</p>
+  <a
+    href={profile.socials.credly}
+    target="_blank"
+    rel="noopener"
+    class="text-clay border-clay-ring hover:text-clay-bright mt-3 inline-flex items-center gap-1.5 border-b pb-0.5 font-mono text-[0.68rem] tracking-wider uppercase"
+  >
+    <span class="verify-dot bg-clay inline-block h-1.5 w-1.5 rounded-full" aria-hidden="true"
+    ></span>
+    {t('badge.verify')}
+    <svg
+      class="h-3 w-3"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"></path></svg
+    >
+  </a>
+</aside>
+
+<style>
+  @media (prefers-reduced-motion: no-preference) {
+    .verify-dot {
+      animation: pulse 2.6s infinite;
+    }
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 var(--su-clay-ring);
+      }
+      70% {
+        box-shadow: 0 0 0 7px transparent;
+      }
+      100% {
+        box-shadow: 0 0 0 0 transparent;
+      }
+    }
+  }
+</style>
