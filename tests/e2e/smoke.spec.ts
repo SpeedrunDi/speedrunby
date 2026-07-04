@@ -36,3 +36,24 @@ test('reduced motion still shows all content', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('h1')).toBeVisible();
 });
+
+test('motion path: content becomes visible after reveals boot', async ({ page }) => {
+  await page.goto('/');
+  // below-fold section content must end up visible once motion runs
+  await page.locator('#about h2').scrollIntoViewIfNeeded();
+  await expect(page.locator('#about h2')).toBeVisible();
+  const opacity = await page
+    .locator('#about h2')
+    .evaluate((el) => Number(getComputedStyle(el).opacity));
+  expect(opacity).toBeGreaterThan(0.5);
+});
+
+test('anchor nav scrolls to section', async ({ page }) => {
+  await page.goto('/');
+  await page.click('a[href="#credentials"]');
+  await page.waitForTimeout(1500);
+  const inView = await page
+    .locator('#credentials')
+    .evaluate((el) => el.getBoundingClientRect().top < window.innerHeight);
+  expect(inView).toBe(true);
+});

@@ -124,6 +124,21 @@ const jsonLd = {
     <slot />
     <script>
       import '../scripts/ui.ts';
+
+      // Motion loads at idle so GSAP/Lenis never compete with LCP.
+      // Fail-safe: if the chunk cannot load, unhide everything.
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!reduced && document.documentElement.classList.contains('js-motion')) {
+        const boot = () =>
+          import('../scripts/motion.ts').catch(() => {
+            document.documentElement.classList.remove('js-motion');
+          });
+        if ('requestIdleCallback' in window) {
+          requestIdleCallback(() => boot(), { timeout: 2000 });
+        } else {
+          setTimeout(boot, 350);
+        }
+      }
     </script>
   </body>
 </html>

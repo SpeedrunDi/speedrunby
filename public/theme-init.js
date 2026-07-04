@@ -12,6 +12,11 @@
     stored === 'light' ||
     (!stored && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
   if (light) document.documentElement.setAttribute('data-theme', 'light');
+  // motion gate: scroll-reveal hidden states apply only when JS is alive
+  // and the user has not asked for reduced motion
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.documentElement.classList.add('js-motion');
+  }
   // enable colour transitions only after first paint
   requestAnimationFrame(function () {
     document.documentElement.classList.add('theme-ready');
