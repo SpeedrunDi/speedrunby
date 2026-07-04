@@ -3,14 +3,17 @@
 // Motion extras (magnetic buttons, tilt, counters) load in motion.ts.
 import { paintStaticPortrait } from './portrait-dots';
 
+// bump when the portrait asset changes: /images/* is cached immutable
+const PORTRAIT_URL = '/images/portrait.webp?v=2';
+
 async function initPortraitDots() {
   const canvas = document.getElementById('portrait-canvas') as HTMLCanvasElement | null;
   if (!canvas) return;
   try {
-    const field = await paintStaticPortrait(canvas, '/images/portrait.webp');
+    const field = await paintStaticPortrait(canvas, PORTRAIT_URL);
     // the WebGL scene reuses the sampled field (no double decode)
     (window as unknown as { __portraitField?: unknown }).__portraitField = field;
-    const repaint = () => void paintStaticPortrait(canvas, '/images/portrait.webp');
+    const repaint = () => void paintStaticPortrait(canvas, PORTRAIT_URL);
     window.addEventListener('resize', repaint, { passive: true });
     document.addEventListener('themechange', repaint);
   } catch {
