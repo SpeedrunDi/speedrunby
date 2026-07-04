@@ -42,10 +42,12 @@
   --su-ink: #241d16;
   --su-ink-2: #5b5245;
   --su-ink-3: #8b8171;
-  --su-clay: #c25e38;
-  --su-clay-bright: #a94d2a;
-  --su-clay-tint: rgba(194, 94, 56, 0.1);
-  --su-clay-ring: rgba(194, 94, 56, 0.32);
+  /* light clay is pre-darkened for WCAG AA on small text:
+     #a94d2a on #f6f1e9 = 4.94:1 (audit-verified); hover darkens further */
+  --su-clay: #a94d2a;
+  --su-clay-bright: #8f3f22;
+  --su-clay-tint: rgba(169, 77, 42, 0.1);
+  --su-clay-ring: rgba(169, 77, 42, 0.34);
   --su-line: rgba(38, 30, 22, 0.11);
   --su-line-strong: rgba(38, 30, 22, 0.2);
   --su-on-clay: #fdf6ef;
