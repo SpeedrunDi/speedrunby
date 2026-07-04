@@ -59,6 +59,30 @@ function initReveals() {
       scrollTrigger: { trigger: el, start: 'top 85%', once: true },
     });
   });
+
+  // SAFETY NET: an instant jump (End key, scroll restoration, anchor deep-link)
+  // can land past a trigger without ScrollTrigger registering the crossing —
+  // content then stays invisible (seen in prod). Any fade-up that is on screen
+  // but still hidden shortly after intersecting gets revealed unconditionally.
+  const net = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const el = entry.target as HTMLElement;
+        net.unobserve(el);
+        setTimeout(() => {
+          if (Number(getComputedStyle(el).opacity) < 0.5) {
+            gsap.to(el, { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' });
+          }
+        }, 1000);
+      });
+    },
+    { threshold: 0.05 },
+  );
+  document.querySelectorAll<HTMLElement>('.fade-up').forEach((el) => {
+    if (el.closest('[hidden]')) return;
+    net.observe(el);
+  });
 }
 
 /* ---------- hero scroll drift ---------- */
