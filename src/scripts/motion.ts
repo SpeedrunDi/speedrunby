@@ -185,3 +185,6 @@ initCounters();
 initMagnetic();
 initTilt();
 initProcess();
+
+// boot signal for e2e determinism (idle loading is racy on slow runners)
+(window as unknown as { __motionReady?: boolean }).__motionReady = true;

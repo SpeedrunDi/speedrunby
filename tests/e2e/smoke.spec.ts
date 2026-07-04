@@ -39,21 +39,33 @@ test('reduced motion still shows all content', async ({ page }) => {
 
 test('motion path: content becomes visible after reveals boot', async ({ page }) => {
   await page.goto('/');
-  // below-fold section content must end up visible once motion runs
+  // motion boots at idle — wait for its ready signal before scrolling
+  await page.waitForFunction(() => (window as { __motionReady?: boolean }).__motionReady, null, {
+    timeout: 10_000,
+  });
   await page.locator('#about h2').scrollIntoViewIfNeeded();
   await expect(page.locator('#about h2')).toBeVisible();
-  const opacity = await page
-    .locator('#about h2')
-    .evaluate((el) => Number(getComputedStyle(el).opacity));
-  expect(opacity).toBeGreaterThan(0.5);
+  // reveal animation lasts ~1s — poll until it lands
+  await expect
+    .poll(() => page.locator('#about h2').evaluate((el) => Number(getComputedStyle(el).opacity)), {
+      timeout: 6_000,
+    })
+    .toBeGreaterThan(0.5);
 });
 
 test('anchor nav scrolls to section', async ({ page }) => {
   await page.goto('/');
+  await page.waitForFunction(() => (window as { __motionReady?: boolean }).__motionReady, null, {
+    timeout: 10_000,
+  });
   await page.click('a[href="#credentials"]');
-  await page.waitForTimeout(1500);
-  const inView = await page
-    .locator('#credentials')
-    .evaluate((el) => el.getBoundingClientRect().top < window.innerHeight);
-  expect(inView).toBe(true);
+  await expect
+    .poll(
+      () =>
+        page
+          .locator('#credentials')
+          .evaluate((el) => el.getBoundingClientRect().top < window.innerHeight),
+      { timeout: 6_000 },
+    )
+    .toBe(true);
 });
