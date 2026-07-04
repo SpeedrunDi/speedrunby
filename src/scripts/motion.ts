@@ -48,9 +48,9 @@ function initReveals() {
       scrollTrigger: { trigger: group, start: 'top 82%', once: true },
     });
   });
-  // standalone fade-ups
+  // standalone fade-ups (skip anything inside a collapsed container)
   document.querySelectorAll<HTMLElement>('.fade-up').forEach((el) => {
-    if (el.closest('.reveal-group')) return;
+    if (el.closest('.reveal-group') || el.closest('[hidden]')) return;
     gsap.to(el, {
       opacity: 1,
       y: 0,
@@ -185,6 +185,9 @@ initCounters();
 initMagnetic();
 initTilt();
 initProcess();
+
+// layout hooks for ui.ts (projects toggle shifts everything below it)
+(window as unknown as { __refreshST?: () => void }).__refreshST = () => ScrollTrigger.refresh();
 
 // boot signal for e2e determinism (idle loading is racy on slow runners)
 (window as unknown as { __motionReady?: boolean }).__motionReady = true;

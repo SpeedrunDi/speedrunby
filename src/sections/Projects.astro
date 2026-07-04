@@ -11,6 +11,8 @@ interface Props {
 const { locale } = Astro.props;
 const tr = useTranslations(locale);
 
+// progressive disclosure: the flagships carry the story, the long tail
+// stays in the DOM (SEO/crawlable) behind an accessible toggle
 const flagships = projects.filter((p) => p.flagship);
 const others = projects.filter((p) => !p.flagship);
 ---
@@ -26,8 +28,65 @@ const others = projects.filter((p) => !p.flagship);
     <div class="reveal-group mt-10 grid gap-4 md:grid-cols-2">
       {flagships.map((p) => <ProjectCard locale={locale} project={p} />)}
     </div>
-    <div class="reveal-group mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      {others.map((p) => <ProjectCard locale={locale} project={p} />)}
+
+    <div
+      id="more-projects"
+      class="projects-more mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+      hidden
+    >
+      {others.map((p) => <ProjectCard locale={locale} project={p} reveal={false} />)}
+    </div>
+
+    <div class="mt-8 text-center">
+      <button
+        type="button"
+        class="btn btn-ghost"
+        data-projects-toggle
+        aria-expanded="false"
+        aria-controls="more-projects"
+        data-label-more={`${tr('work.showAll')} (${projects.length})`}
+        data-label-less={tr('work.showLess')}
+      >
+        <span data-toggle-label>{tr('work.showAll')} ({projects.length})</span>
+        <svg
+          class="toggle-chevron h-4 w-4 transition-transform"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="m6 9 6 6 6-6"></path>
+        </svg>
+      </button>
     </div>
   </div>
 </section>
+
+<style>
+  /* cards in the expandable grid animate in with plain CSS (they are
+     outside the GSAP reveal system by design — one animator per element) */
+  .projects-more:not([hidden]) :global(article) {
+    animation: proj-in 0.5s var(--ease-premium) both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .projects-more:not([hidden]) :global(article) {
+      animation: none;
+    }
+  }
+  @keyframes proj-in {
+    from {
+      opacity: 0;
+      transform: translateY(1.2rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  [data-projects-toggle][aria-expanded='true'] .toggle-chevron {
+    transform: rotate(180deg);
+  }
+</style>
