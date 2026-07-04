@@ -53,6 +53,22 @@ test('motion path: content becomes visible after reveals boot', async ({ page })
     .toBeGreaterThan(0.5);
 });
 
+test('instant jump to page bottom still reveals the contact section', async ({ page }) => {
+  // regression: a jump past a ScrollTrigger (End key, scroll restoration,
+  // deep-link) used to leave the contact section at opacity 0 forever
+  await page.goto('/');
+  await page.waitForFunction(() => (window as { __motionReady?: boolean }).__motionReady, null, {
+    timeout: 10_000,
+  });
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await expect
+    .poll(
+      () => page.locator('#contact h2').evaluate((el) => Number(getComputedStyle(el).opacity)),
+      { timeout: 6_000 },
+    )
+    .toBeGreaterThan(0.5);
+});
+
 test('anchor nav scrolls to section', async ({ page }) => {
   await page.goto('/');
   await page.waitForFunction(() => (window as { __motionReady?: boolean }).__motionReady, null, {

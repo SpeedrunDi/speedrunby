@@ -128,28 +128,27 @@ const tr = useTranslations(locale);
       </div>
     </div>
 
-    <!-- portrait column: the subject IS particles — same DNA as the constellation.
-         2D canvas paints instantly everywhere; WebGL brings it alive on gesture. -->
+    <!-- portrait column: framed stylized art render, constellation behind,
+         badge card docked at the frame's corner -->
     <div class="relative mx-auto w-full max-w-sm lg:max-w-md" data-hero="portrait">
       <div class="portrait-glow" aria-hidden="true"></div>
-      <div
-        id="portrait-box"
-        class="portrait-mask relative z-10 mx-auto w-full"
-        style="aspect-ratio: 1024 / 1489;"
-        role="img"
-        aria-label="Amankeldi Kydyraliev — портрет из частиц"
+      <figure
+        class="portrait-frame border-line-strong relative z-10 mx-auto w-full overflow-hidden rounded-3xl border shadow-2xl"
+        data-tilt
       >
-        <canvas id="portrait-canvas" class="absolute inset-0 h-full w-full"></canvas>
-        <noscript>
-          <img
-            src="/images/portrait.webp?v=2"
-            alt="Amankeldi Kydyraliev — portrait"
-            width="1024"
-            height="1489"
-            class="absolute inset-0 h-full w-full"
-          />
-        </noscript>
-      </div>
+        <img
+          src="/images/portrait-art.webp"
+          srcset="/images/portrait-art-sm.webp 512w, /images/portrait-art.webp 1024w"
+          sizes="(min-width: 1024px) 28rem, 24rem"
+          width="1024"
+          height="1489"
+          alt={tr('hero.portraitAlt')}
+          loading="eager"
+          decoding="async"
+          fetchpriority="high"
+          class="h-full w-full object-cover"
+        />
+      </figure>
       <div
         class="absolute -bottom-4 left-1/2 z-20 -translate-x-1/2 lg:-right-2 lg:left-auto lg:translate-x-0"
       >
@@ -169,6 +168,11 @@ const tr = useTranslations(locale);
         transparent 55%
       );
   }
+  .portrait-frame {
+    aspect-ratio: 1024 / 1489;
+    background: var(--su-surface);
+    will-change: transform;
+  }
   .portrait-glow {
     position: absolute;
     inset: 8% 4% 0;
@@ -179,10 +183,6 @@ const tr = useTranslations(locale);
       transparent 70%
     );
     filter: blur(30px);
-  }
-  /* subject bottom fade so the dots sit into the page, not on it */
-  .portrait-mask {
-    mask-image: linear-gradient(to bottom, black 82%, transparent 99%);
   }
   @media (prefers-reduced-motion: no-preference) {
     .verify-dot {

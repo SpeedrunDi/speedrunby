@@ -1,10 +1,8 @@
 // Lazy bootstrapper for the hero WebGL scene. The three.js chunk loads
 // only when: the hero is visible, a user gesture happened, WebGL exists,
 // and the user has not asked for reduced motion / reduced data.
-// The static dot portrait (2D canvas, see ui.ts) is already painted by then.
 import { deviceTier, saveData, webglAvailable } from '../../lib/device-tier';
 import type { SceneHandle } from './scene';
-import type { DotField } from '../../scripts/portrait-dots';
 
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -30,26 +28,6 @@ export function mountHeroScene() {
       constellationCanvas.style.transition = 'opacity 1.2s ease';
       constellationCanvas.style.opacity = '1';
       handles.push(constellation);
-
-      // living particle portrait: upgrade the static 2D dots in place.
-      // The sampler result is shared via ui.ts (window.__portraitField).
-      const staticCanvas = document.getElementById('portrait-canvas') as HTMLCanvasElement | null;
-      const field = (window as unknown as { __portraitField?: DotField }).__portraitField;
-      if (staticCanvas && field && window.matchMedia('(pointer: fine)').matches) {
-        const box = staticCanvas.parentElement!;
-        const live = document.createElement('canvas');
-        live.setAttribute('aria-hidden', 'true');
-        live.style.cssText =
-          'position:absolute;inset:0;width:100%;height:100%;opacity:0;transition:opacity .6s ease;';
-        box.appendChild(live);
-        const portrait = scene.initParticlePortrait(live, field);
-        handles.push(portrait);
-        requestAnimationFrame(() => {
-          live.style.opacity = '1';
-          staticCanvas.style.opacity = '0';
-          staticCanvas.style.transition = 'opacity .6s ease';
-        });
-      }
 
       // run only while the hero is on screen and the tab is visible
       const io = new IntersectionObserver(
