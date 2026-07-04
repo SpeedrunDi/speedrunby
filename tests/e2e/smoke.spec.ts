@@ -69,3 +69,14 @@ test('anchor nav scrolls to section', async ({ page }) => {
     )
     .toBe(true);
 });
+
+test('keyboard: theme toggle is reachable and activates', async ({ page }) => {
+  await page.goto('/');
+  const toggle = page.locator('#theme-toggle');
+  await toggle.focus();
+  await expect(toggle).toBeFocused();
+  const before = await page.locator('html').getAttribute('data-theme');
+  await page.keyboard.press('Enter');
+  const after = await page.locator('html').getAttribute('data-theme');
+  expect(after).not.toBe(before);
+});
