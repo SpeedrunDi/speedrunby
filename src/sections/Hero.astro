@@ -128,25 +128,26 @@ const tr = useTranslations(locale);
       </div>
     </div>
 
-    <!-- portrait column: framed stylized art render, constellation behind,
-         badge card docked at the frame's corner -->
+    <!-- portrait column: background-free cutout floating over the constellation.
+         Orbit rings behind the subject carry the agent-satellite motif; a clay
+         rim glow and a bottom fade sit him INTO the page instead of on it. -->
     <div class="relative mx-auto w-full max-w-sm lg:max-w-md" data-hero="portrait">
-      <div class="portrait-glow" aria-hidden="true"></div>
-      <figure
-        class="portrait-frame border-line-strong relative z-10 mx-auto w-full overflow-hidden rounded-3xl border shadow-2xl"
-        data-tilt
-      >
+      <div class="portrait-aura" aria-hidden="true">
+        <span class="orbit orbit-a"></span>
+        <span class="orbit orbit-b"></span>
+      </div>
+      <figure class="portrait-stage relative z-10 mx-auto w-full" data-tilt>
         <img
-          src="/images/portrait-art.webp"
-          srcset="/images/portrait-art-sm.webp 512w, /images/portrait-art.webp 1024w"
+          src="/images/portrait-cut.webp"
+          srcset="/images/portrait-cut-sm.webp 393w, /images/portrait-cut.webp 785w"
           sizes="(min-width: 1024px) 28rem, 24rem"
-          width="1024"
-          height="1489"
+          width="785"
+          height="1178"
           alt={tr('hero.portraitAlt')}
           loading="eager"
           decoding="async"
           fetchpriority="high"
-          class="h-full w-full object-cover"
+          class="portrait-cut h-full w-full object-contain"
         />
       </figure>
       <div
@@ -168,21 +169,93 @@ const tr = useTranslations(locale);
         transparent 55%
       );
   }
-  .portrait-frame {
-    aspect-ratio: 1024 / 1489;
-    background: var(--su-surface);
+  /* rim glow + soft ground shadow live on the STAGE, the bottom-fade mask on
+     the IMG: a mask on the same element would clip the shadows at the border
+     box (mask-clip) and paint a visible rectangle. Split, the shadow is
+     computed from the already-faded silhouette and spreads freely. */
+  .portrait-stage {
+    aspect-ratio: 785 / 1178;
     will-change: transform;
+    filter: drop-shadow(0 0 34px color-mix(in oklab, var(--su-clay) 38%, transparent))
+      drop-shadow(0 26px 44px rgb(0 0 0 / 0.32));
   }
-  .portrait-glow {
+  .portrait-cut {
+    mask-image: linear-gradient(to bottom, black 84%, transparent 99%);
+  }
+  /* warm aura behind the subject — pure gradient, no blur: a filter here
+     would clip at the box edge AND smear the orbit rings inside */
+  .portrait-aura {
     position: absolute;
-    inset: 8% 4% 0;
-    border-radius: 45% 45% 38% 38%;
+    inset: 6% 0 0;
     background: radial-gradient(
-      60% 55% at 50% 38%,
+      48% 40% at 50% 32%,
       color-mix(in oklab, var(--su-clay) 26%, transparent),
-      transparent 70%
+      transparent 68%
     );
-    filter: blur(30px);
+  }
+  /* orbit rings: satellites circling the architect — same motif as the
+     constellation. Pure CSS: tilted circles spinning around Z, each with
+     a glowing "agent" dot riding the ring. */
+  .orbit {
+    position: absolute;
+    left: 50%;
+    top: 44%;
+    border-radius: 50%;
+    border: 1px solid color-mix(in oklab, var(--su-clay) 45%, transparent);
+    filter: blur(0.2px);
+  }
+  .orbit::before {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: 50%;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--su-clay-bright, var(--su-clay));
+    box-shadow: 0 0 10px 2px color-mix(in oklab, var(--su-clay) 70%, transparent);
+  }
+  .orbit-a {
+    width: 118%;
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%) rotateX(74deg) rotateZ(0deg);
+    animation: orbit-spin-a 21s linear infinite;
+  }
+  .orbit-b {
+    width: 96%;
+    aspect-ratio: 1;
+    border-color: color-mix(in oklab, var(--su-clay) 28%, transparent);
+    transform: translate(-50%, -50%) rotateX(78deg) rotateZ(120deg);
+    animation: orbit-spin-b 34s linear infinite reverse;
+  }
+  @keyframes orbit-spin-a {
+    from {
+      transform: translate(-50%, -50%) rotateX(74deg) rotateZ(0deg);
+    }
+    to {
+      transform: translate(-50%, -50%) rotateX(74deg) rotateZ(360deg);
+    }
+  }
+  @keyframes orbit-spin-b {
+    from {
+      transform: translate(-50%, -50%) rotateX(78deg) rotateZ(120deg);
+    }
+    to {
+      transform: translate(-50%, -50%) rotateX(78deg) rotateZ(480deg);
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .portrait-cut {
+      animation: portrait-float 7s ease-in-out infinite alternate;
+    }
+    @keyframes portrait-float {
+      from {
+        transform: translateY(0);
+      }
+      to {
+        transform: translateY(-9px);
+      }
+    }
   }
   @media (prefers-reduced-motion: no-preference) {
     .verify-dot {
