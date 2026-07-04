@@ -139,10 +139,10 @@ const tr = useTranslations(locale);
       <figure class="portrait-stage relative z-10 mx-auto w-full" data-tilt>
         <img
           src="/images/portrait-cut.webp"
-          srcset="/images/portrait-cut-sm.webp 393w, /images/portrait-cut.webp 785w"
+          srcset="/images/portrait-cut-sm.webp 391w, /images/portrait-cut.webp 781w"
           sizes="(min-width: 1024px) 28rem, 24rem"
-          width="785"
-          height="1178"
+          width="781"
+          height="1173"
           alt={tr('hero.portraitAlt')}
           loading="eager"
           decoding="async"
@@ -174,7 +174,7 @@ const tr = useTranslations(locale);
      box (mask-clip) and paint a visible rectangle. Split, the shadow is
      computed from the already-faded silhouette and spreads freely. */
   .portrait-stage {
-    aspect-ratio: 785 / 1178;
+    aspect-ratio: 781 / 1173;
     will-change: transform;
     filter: drop-shadow(0 0 34px color-mix(in oklab, var(--su-clay) 38%, transparent))
       drop-shadow(0 26px 44px rgb(0 0 0 / 0.32));
