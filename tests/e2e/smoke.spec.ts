@@ -36,3 +36,36 @@ test('reduced motion still shows all content', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('h1')).toBeVisible();
 });
+
+test('motion path: content becomes visible after reveals boot', async ({ page }) => {
+  await page.goto('/');
+  // motion boots at idle — wait for its ready signal before scrolling
+  await page.waitForFunction(() => (window as { __motionReady?: boolean }).__motionReady, null, {
+    timeout: 10_000,
+  });
+  await page.locator('#about h2').scrollIntoViewIfNeeded();
+  await expect(page.locator('#about h2')).toBeVisible();
+  // reveal animation lasts ~1s — poll until it lands
+  await expect
+    .poll(() => page.locator('#about h2').evaluate((el) => Number(getComputedStyle(el).opacity)), {
+      timeout: 6_000,
+    })
+    .toBeGreaterThan(0.5);
+});
+
+test('anchor nav scrolls to section', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForFunction(() => (window as { __motionReady?: boolean }).__motionReady, null, {
+    timeout: 10_000,
+  });
+  await page.click('a[href="#credentials"]');
+  await expect
+    .poll(
+      () =>
+        page
+          .locator('#credentials')
+          .evaluate((el) => el.getBoundingClientRect().top < window.innerHeight),
+      { timeout: 6_000 },
+    )
+    .toBe(true);
+});
