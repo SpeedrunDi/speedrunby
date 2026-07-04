@@ -19,11 +19,7 @@ const t = useTranslations(locale);
   {other.toUpperCase()}
 </a>
 
-<script>
-  // preserve the current #hash when switching locale
-  document.querySelectorAll<HTMLAnchorElement>('[data-lang-switch]').forEach((a) => {
-    a.addEventListener('click', () => {
-      if (location.hash) a.href = a.href.split('#')[0] + location.hash;
-    });
-  });
-</script>
+{
+  /* hash-preservation on switch lives in ui.ts — the strict CSP
+    (script-src 'self') forbids the inline scripts Astro would emit here */
+}
