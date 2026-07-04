@@ -27,7 +27,7 @@ jobs:
           fail: false
       - name: Open an issue on failures
         if: steps.lychee.outputs.exit_code != 0
-        uses: peter-evans/create-issue-from-file@v5
+        uses: peter-evans/create-issue-from-file@v6
         with:
           title: 'Link check: broken external links'
           content-filepath: ./lychee/out.md
