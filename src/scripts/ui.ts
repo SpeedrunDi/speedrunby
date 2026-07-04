@@ -63,6 +63,16 @@ function initHeaderElevation() {
   window.addEventListener('scroll', onScroll, { passive: true });
 }
 
+function initLangSwitch() {
+  // preserve the current #hash when switching locale
+  document.querySelectorAll<HTMLAnchorElement>('[data-lang-switch]').forEach((a) => {
+    a.addEventListener('click', () => {
+      if (location.hash) a.href = a.href.split('#')[0] + location.hash;
+    });
+  });
+}
+
 initThemeToggle();
 initCopyEmail();
 initHeaderElevation();
+initLangSwitch();
