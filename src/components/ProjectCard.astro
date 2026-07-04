@@ -6,15 +6,18 @@ import type { Project } from '../data/projects';
 interface Props {
   locale: Locale;
   project: Project;
+  /** false for cards inside the collapsed grid — they animate via CSS there */
+  reveal?: boolean;
 }
-const { locale, project: p } = Astro.props;
+const { locale, project: p, reveal = true } = Astro.props;
 const tr = useTranslations(locale);
 const github = !p.confidential ? p.links?.github : undefined;
 ---
 
 <article
   class:list={[
-    'fade-up card flex flex-col gap-3 p-6 transition-[transform,border-color,background-color] duration-200 hover:-translate-y-1',
+    reveal && 'fade-up',
+    'card flex flex-col gap-3 p-6 transition-[transform,border-color,background-color] duration-200 hover:-translate-y-1',
     p.flagship
       ? 'border-clay-ring hover:bg-surface-2 bg-[radial-gradient(120%_150%_at_0%_0%,var(--su-clay-tint),transparent_55%)]'
       : 'hover:border-line-strong hover:bg-surface-2',

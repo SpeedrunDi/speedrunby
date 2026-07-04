@@ -63,6 +63,22 @@ function initHeaderElevation() {
   window.addEventListener('scroll', onScroll, { passive: true });
 }
 
+function initProjectsToggle() {
+  const btn = document.querySelector<HTMLButtonElement>('[data-projects-toggle]');
+  const grid = document.getElementById('more-projects');
+  if (!btn || !grid) return;
+  const label = btn.querySelector<HTMLElement>('[data-toggle-label]');
+  btn.addEventListener('click', () => {
+    const expanded = btn.getAttribute('aria-expanded') === 'true';
+    grid.hidden = expanded;
+    btn.setAttribute('aria-expanded', String(!expanded));
+    if (label) label.textContent = expanded ? btn.dataset.labelMore! : btn.dataset.labelLess!;
+    // sections below shift — let ScrollTrigger re-measure if motion is up
+    (window as unknown as { __refreshST?: () => void }).__refreshST?.();
+    if (expanded) grid.closest('section')?.scrollIntoView({ block: 'start' });
+  });
+}
+
 function initLangSwitch() {
   // preserve the current #hash when switching locale
   document.querySelectorAll<HTMLAnchorElement>('[data-lang-switch]').forEach((a) => {
@@ -76,3 +92,4 @@ initThemeToggle();
 initCopyEmail();
 initHeaderElevation();
 initLangSwitch();
+initProjectsToggle();

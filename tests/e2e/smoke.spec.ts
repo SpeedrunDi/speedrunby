@@ -80,3 +80,15 @@ test('keyboard: theme toggle is reachable and activates', async ({ page }) => {
   const after = await page.locator('html').getAttribute('data-theme');
   expect(after).not.toBe(before);
 });
+
+test('projects: collapsed by default, toggle reveals the rest', async ({ page }) => {
+  await page.goto('/');
+  const grid = page.locator('#more-projects');
+  await expect(grid).toBeHidden();
+  const btn = page.locator('[data-projects-toggle]');
+  await btn.scrollIntoViewIfNeeded();
+  await btn.click();
+  await expect(grid).toBeVisible();
+  expect(await grid.locator('article').count()).toBeGreaterThan(5);
+  await expect(btn).toHaveAttribute('aria-expanded', 'true');
+});
