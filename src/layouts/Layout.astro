@@ -70,9 +70,22 @@ const jsonLd = {
     <title>{title}</title>
     <meta name="description" content={description} />
     {noindex && <meta name="robots" content="noindex" />}
-    <link rel="canonical" href={canonical} />
-    {LOCALES.map((l) => <link rel="alternate" hreflang={l} href={new URL(localePath(l), site)} />)}
-    <link rel="alternate" hreflang="x-default" href={new URL(localePath(DEFAULT_LOCALE), site)} />
+    {
+      /* canonical/hreflang are index signals — meaningless on a noindex page */
+      !noindex && (
+        <>
+          <link rel="canonical" href={canonical} />
+          {LOCALES.map((l) => (
+            <link rel="alternate" hreflang={l} href={new URL(localePath(l), site)} />
+          ))}
+          <link
+            rel="alternate"
+            hreflang="x-default"
+            href={new URL(localePath(DEFAULT_LOCALE), site)}
+          />
+        </>
+      )
+    }
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="speedrunby" />
@@ -99,7 +112,12 @@ const jsonLd = {
     <meta name="format-detection" content="telephone=no" />
     <meta name="generator" content={Astro.generator} />
 
-    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
+    {/* '<' escaped so data can never form a premature </script> close */}
+    <script
+      type="application/ld+json"
+      set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')}
+      is:inline
+    />
   </head>
   <body>
     <a href="#main" class="sr-skip">{t('a11y.skip')}</a>

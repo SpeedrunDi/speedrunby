@@ -30,4 +30,11 @@ export default tseslint.config(
       globals: { ...globals.browser },
     },
   },
+  {
+    // node build scripts
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: { ...globals.node },
+    },
+  },
 );
