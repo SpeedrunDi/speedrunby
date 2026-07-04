@@ -302,74 +302,129 @@ export function initConstellation(canvas: HTMLCanvasElement, tier: Tier): SceneH
   return handle;
 }
 
-/* ---------------- portrait depth parallax ---------------- */
+/* ---------------- living particle portrait ---------------- */
+import type { DotField } from '../../scripts/portrait-dots';
 
-export function initPortrait(
-  canvas: HTMLCanvasElement,
-  texUrl: string,
-  depthUrl: string,
-  aspect: number,
-): SceneHandle {
+export function initParticlePortrait(canvas: HTMLCanvasElement, field: DotField): SceneHandle {
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
   const scene = new THREE.Scene();
-  const camera = new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, 0, 1);
+  // normalized portrait space: x 0..1, y 0..1 (y down like the sampler)
+  const camera = new THREE.OrthographicCamera(0, 1, 0, 1, -1, 1);
 
-  const loader = new THREE.TextureLoader();
+  const { dots, count } = field;
+  const positions = new Float32Array(count * 3);
+  const lums = new Float32Array(count);
+  const phases = new Float32Array(count);
+  for (let i = 0; i < count; i++) {
+    positions[i * 3] = dots[i * 3];
+    positions[i * 3 + 1] = dots[i * 3 + 1];
+    positions[i * 3 + 2] = 0;
+    lums[i] = dots[i * 3 + 2];
+    phases[i] = prand(i * 1.7) * Math.PI * 2;
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute('aLum', new THREE.BufferAttribute(lums, 1));
+  geo.setAttribute('aPhase', new THREE.BufferAttribute(phases, 1));
+
   const uniforms = {
-    uTex: { value: loader.load(texUrl) },
-    uDepth: { value: loader.load(depthUrl) },
-    uPointer: { value: new THREE.Vector2(0, 0) },
+    uTime: { value: 0 },
+    uPointer: { value: new THREE.Vector2(-10, -10) }, // off-canvas until first move
+    uCell: { value: 1 },
+    uAssemble: { value: 0 }, // 0 = scattered, 1 = in place (entrance)
+    uLight: { value: document.documentElement.dataset.theme === 'light' ? 1 : 0 },
   };
-  uniforms.uTex.value.colorSpace = THREE.SRGBColorSpace;
 
   const mat = new THREE.ShaderMaterial({
     transparent: true,
+    depthWrite: false,
     uniforms,
     vertexShader: /* glsl */ `
-      varying vec2 vUv;
+      attribute float aLum;
+      attribute float aPhase;
+      uniform float uTime;
+      uniform vec2 uPointer;
+      uniform float uCell;
+      uniform float uAssemble;
+      varying float vLum;
+      varying float vNear;
       void main() {
-        vUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        vLum = aLum;
+        vec3 pos = position;
+        // entrance: dots assemble from a loose cloud
+        float scatter = 1.0 - uAssemble;
+        pos.x += sin(aPhase * 7.3) * 0.35 * scatter;
+        pos.y += cos(aPhase * 5.1) * 0.35 * scatter;
+        // breathing
+        pos.x += sin(uTime * 0.7 + aPhase) * 0.0022;
+        pos.y += cos(uTime * 0.6 + aPhase * 1.4) * 0.0022;
+        // pointer repulsion (portrait-local coords)
+        vec2 d = pos.xy - uPointer;
+        float dist = length(d);
+        float push = smoothstep(0.16, 0.0, dist) * 0.05;
+        pos.xy += normalize(d + 1e-5) * push;
+        vNear = smoothstep(0.2, 0.0, dist);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+        float r = 0.08 + pow(aLum, 0.8) * 0.46;
+        gl_PointSize = r * uCell * 2.0 * (1.0 + vNear * 0.35);
       }
     `,
     fragmentShader: /* glsl */ `
-      uniform sampler2D uTex;
-      uniform sampler2D uDepth;
-      uniform vec2 uPointer;
-      varying vec2 vUv;
+      uniform float uLight;
+      varying float vLum;
+      varying float vNear;
+      vec3 rampDark(float lum) {
+        vec3 dark = vec3(0.353, 0.216, 0.157);
+        vec3 clay = vec3(0.878, 0.522, 0.361);
+        vec3 ink  = vec3(0.953, 0.929, 0.894);
+        float t = min(1.0, lum * 1.35);
+        return lum > 0.55 ? mix(clay, ink, t * 0.75) : mix(dark, clay, t * 1.6);
+      }
+      vec3 rampLight(float lum) {
+        // inverted tonality for the cream ground: face goes deep bronze
+        vec3 deep = vec3(0.239, 0.149, 0.102);
+        vec3 clay = vec3(0.663, 0.302, 0.165);
+        vec3 soft = vec3(0.847, 0.620, 0.502);
+        float t = min(1.0, lum * 1.35);
+        return lum > 0.55 ? mix(clay, deep, t * 0.8) : mix(soft, clay, t * 1.6);
+      }
       void main() {
-        float depth = texture2D(uDepth, vUv).r;
-        vec2 offset = uPointer * 0.02 * depth;
-        vec4 col = texture2D(uTex, vUv + offset);
-        gl_FragColor = col;
+        float d = length(gl_PointCoord - 0.5);
+        float disc = smoothstep(0.5, 0.18, d);
+        vec3 col = mix(rampDark(vLum), rampLight(vLum), uLight) * (1.0 + vNear * 0.25);
+        gl_FragColor = vec4(col, disc * min(1.0, 0.55 + vLum * 0.6));
       }
     `,
   });
-  scene.add(new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat));
-  void aspect; // plane fills the canvas box, which already carries the aspect
+  scene.add(new THREE.Points(geo, mat));
 
-  const target = new THREE.Vector2(0, 0);
+  const target = new THREE.Vector2(-10, -10);
   const onPointer = (e: PointerEvent) => {
-    const nx = (e.clientX / window.innerWidth - 0.5) * 2;
-    const ny = (e.clientY / window.innerHeight - 0.5) * 2;
-    target.set(nx, ny);
+    const r = canvas.getBoundingClientRect();
+    target.set((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
   };
   window.addEventListener('pointermove', onPointer, { passive: true });
 
   const resize = () => {
     const r = canvas.getBoundingClientRect();
     renderer.setSize(r.width, r.height, false);
+    uniforms.uCell.value = (r.width * Math.min(window.devicePixelRatio, 2)) / 96;
   };
   resize();
   window.addEventListener('resize', resize);
 
   let raf = 0;
   let running = false;
+  const clock = new THREE.Clock();
   const frame = () => {
     if (!running) return;
-    uniforms.uPointer.value.lerp(target, 0.07);
+    uniforms.uTime.value = clock.getElapsedTime();
+    // entrance assembles over ~1.1s
+    uniforms.uAssemble.value = Math.min(1, uniforms.uAssemble.value + 0.016 / 1.1);
+    uniforms.uPointer.value.lerp(target, 0.1);
     renderer.render(scene, camera);
     raf = requestAnimationFrame(frame);
   };
@@ -382,15 +437,17 @@ export function initPortrait(
     resume() {
       if (running) return;
       running = true;
+      clock.start();
       raf = requestAnimationFrame(frame);
     },
     setTheme() {
-      /* texture-based, theme-independent */
+      uniforms.uLight.value = document.documentElement.dataset.theme === 'light' ? 1 : 0;
     },
     destroy() {
       this.pause();
       window.removeEventListener('pointermove', onPointer);
       window.removeEventListener('resize', resize);
+      geo.dispose();
       mat.dispose();
       renderer.dispose();
     },
