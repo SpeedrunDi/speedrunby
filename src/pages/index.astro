@@ -1,20 +1,12 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { useTranslations, t } from '../i18n/utils';
-import { profile } from '../data/profile';
+import Portfolio from '../views/Portfolio.astro';
+import { useTranslations } from '../i18n/utils';
 
 const locale = 'ru' as const;
-const tr = useTranslations(locale);
+const t = useTranslations(locale);
 ---
 
-<Layout locale={locale} title={tr('site.title')} description={tr('site.description')}>
-  <main id="main" class="container-edge flex min-h-svh flex-col items-start justify-center gap-4">
-    <p class="eyebrow">{tr('hero.eyebrow')}</p>
-    <h1 class="text-ink" style="font-size: var(--text-hero); line-height: 0.98;">
-      Amankeldi<br /><span class="text-clay">Kydyraliev</span>
-    </h1>
-    <p class="text-ink-2 max-w-[52ch]" style="font-size: var(--text-lead);">
-      {t(profile.role, locale)}. {t(profile.location, locale)}.
-    </p>
-  </main>
+<Layout locale={locale} title={t('site.title')} description={t('site.description')}>
+  <Portfolio locale={locale} />
 </Layout>

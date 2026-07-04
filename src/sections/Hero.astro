@@ -1,0 +1,197 @@
+---
+import { type Locale } from '../i18n/types';
+import { t, useTranslations } from '../i18n/utils';
+import { profile } from '../data/profile';
+import BadgeCard from '../components/BadgeCard.astro';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const tr = useTranslations(locale);
+---
+
+<section class="relative isolate overflow-hidden" aria-labelledby="hero-title">
+  <!-- constellation canvas mounts here in the hero-scene phase; static gradient fallback -->
+  <div class="hero-bg absolute inset-0 -z-10" aria-hidden="true">
+    <canvas id="hero-canvas" class="absolute inset-0 h-full w-full opacity-0"></canvas>
+  </div>
+
+  <div
+    class="container-edge grid min-h-[calc(100svh-3.75rem)] items-center gap-10 py-14 lg:grid-cols-[1.4fr_1fr] lg:gap-6"
+  >
+    <div class="hero-copy max-w-2xl">
+      <p class="eyebrow" data-hero="eyebrow">
+        <span class="verify-dot bg-clay inline-block h-2 w-2 rounded-full" aria-hidden="true"
+        ></span>
+        {tr('hero.eyebrow')}
+      </p>
+      <h1
+        id="hero-title"
+        class="text-ink mt-5"
+        style="font-size: var(--text-hero); line-height: 0.96; letter-spacing: -0.03em;"
+      >
+        <span class="block" data-hero="line">Amankeldi</span>
+        <span class="text-clay block" data-hero="line">Kydyraliev</span>
+      </h1>
+      <p
+        class="text-ink mt-5 font-semibold"
+        style="font-family: var(--font-display-active); font-size: clamp(1.1rem, 1rem + 0.9vw, 1.5rem);"
+        data-hero="sub"
+      >
+        {t(profile.role, locale)}
+      </p>
+      <p class="text-ink-2 mt-5 max-w-[54ch]" style="font-size: var(--text-lead);" data-hero="lede">
+        {t(profile.lede, locale)}
+      </p>
+
+      <div class="mt-7 flex flex-wrap gap-2" data-hero="meta">
+        <span class="pill">
+          <svg
+            class="text-clay h-3.5 w-3.5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+          </svg>
+          {t(profile.location, locale)}
+        </span>
+        <span class="pill">
+          <svg
+            class="text-clay h-3.5 w-3.5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="3" y="7" width="18" height="13" rx="2"></rect>
+            <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+          {t(profile.company, locale)}
+        </span>
+        <span class="pill">EN · RU</span>
+      </div>
+
+      <div class="mt-8 flex flex-wrap gap-3" data-hero="cta">
+        <a
+          class="btn btn-primary"
+          href={profile.socials.credly}
+          target="_blank"
+          rel="noopener"
+          data-magnet
+        >
+          <svg
+            class="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M9 12l2 2 4-4"></path>
+            <path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5l-8-3Z"></path>
+          </svg>
+          {tr('hero.verify')}
+        </a>
+        <a
+          class="btn btn-ghost"
+          href={profile.socials.github}
+          target="_blank"
+          rel="noopener"
+          data-magnet
+        >
+          GitHub
+        </a>
+        <a
+          class="btn btn-ghost"
+          href={profile.socials.linkedin}
+          target="_blank"
+          rel="noopener"
+          data-magnet
+        >
+          LinkedIn
+        </a>
+        <a class="btn btn-ghost" href={`mailto:${profile.email}`} data-magnet>
+          {tr('hero.email')}
+        </a>
+      </div>
+    </div>
+
+    <!-- portrait column: subject emerges from the constellation; badge docks at its base -->
+    <div class="relative mx-auto w-full max-w-sm lg:max-w-md" data-hero="portrait">
+      <div class="portrait-glow" aria-hidden="true"></div>
+      <img
+        id="hero-portrait"
+        src="/images/portrait.webp"
+        srcset="/images/portrait-sm.webp 512w, /images/portrait.webp 1024w"
+        sizes="(min-width: 1024px) 28rem, 24rem"
+        width="1024"
+        height="1489"
+        alt="Amankeldi Kydyraliev — portrait"
+        loading="eager"
+        decoding="async"
+        fetchpriority="high"
+        class="relative z-10 mx-auto w-full"
+      />
+      <div
+        class="absolute -bottom-4 left-1/2 z-20 -translate-x-1/2 lg:-right-2 lg:left-auto lg:translate-x-0"
+      >
+        <BadgeCard locale={locale} compact />
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero-bg {
+    background:
+      radial-gradient(90% 70% at 75% 45%, var(--su-clay-tint), transparent 60%),
+      radial-gradient(
+        120% 90% at 15% 10%,
+        color-mix(in oklab, var(--su-clay) 7%, transparent),
+        transparent 55%
+      );
+  }
+  .portrait-glow {
+    position: absolute;
+    inset: 8% 4% 0;
+    border-radius: 45% 45% 38% 38%;
+    background: radial-gradient(
+      60% 55% at 50% 38%,
+      color-mix(in oklab, var(--su-clay) 26%, transparent),
+      transparent 70%
+    );
+    filter: blur(30px);
+  }
+  /* subject bottom fade so the cutout sits into the page, not on it */
+  #hero-portrait {
+    mask-image: linear-gradient(to bottom, black 82%, transparent 99%);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .verify-dot {
+      animation: pulse 2.6s infinite;
+    }
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 var(--su-clay-ring);
+      }
+      70% {
+        box-shadow: 0 0 0 7px transparent;
+      }
+      100% {
+        box-shadow: 0 0 0 0 transparent;
+      }
+    }
+  }
+</style>

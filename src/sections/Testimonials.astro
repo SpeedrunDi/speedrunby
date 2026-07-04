@@ -1,0 +1,51 @@
+---
+import { type Locale } from '../i18n/types';
+import { t, useTranslations } from '../i18n/utils';
+import { testimonials } from '../data/testimonials';
+import SectionHeader from '../components/SectionHeader.astro';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const tr = useTranslations(locale);
+---
+
+<section
+  id="recos"
+  class="border-line cv-section border-t py-20 md:py-28"
+  aria-labelledby="recos-title"
+>
+  <div class="container-edge">
+    <SectionHeader eyebrow={tr('recos.eyebrow')} title={tr('recos.title')} id="recos-title" />
+    <div class="reveal-group mt-10 grid gap-4 md:grid-cols-2">
+      {
+        testimonials.map((item) => (
+          <figure class="fade-up card flex flex-col gap-5 p-7">
+            <div
+              class="text-clay h-4 text-4xl leading-none font-bold opacity-60"
+              style="font-family: var(--font-display-active);"
+              aria-hidden="true"
+            >
+              “
+            </div>
+            <blockquote>
+              <p class="text-ink leading-relaxed">{t(item.quote, locale)}</p>
+            </blockquote>
+            <figcaption class="mt-auto flex items-center gap-3">
+              <span class="bg-clay-tint border-clay-ring text-clay grid h-9.5 w-9.5 flex-none place-items-center rounded-full border font-mono text-sm">
+                {item.initials}
+              </span>
+              <span>
+                <span class="text-ink block text-sm font-semibold">{item.author}</span>
+                <span class="text-ink-3 block font-mono text-[0.68rem]">
+                  {t(item.role, locale)} · {tr('recos.via')}
+                </span>
+              </span>
+            </figcaption>
+          </figure>
+        ))
+      }
+    </div>
+  </div>
+</section>

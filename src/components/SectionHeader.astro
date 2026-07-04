@@ -1,0 +1,24 @@
+---
+interface Props {
+  eyebrow: string;
+  title: string;
+  lede?: string;
+  center?: boolean;
+  id?: string;
+}
+const { eyebrow, title, lede, center = false, id } = Astro.props;
+---
+
+<div class:list={['reveal-group max-w-[46ch]', center && 'mx-auto text-center']}>
+  <p class:list={['eyebrow fade-up', center && 'justify-center']}>{eyebrow}</p>
+  <h2 {id} class="text-ink fade-up mt-4" style="font-size: var(--text-section); line-height: 1.08;">
+    {title}
+  </h2>
+  {
+    lede && (
+      <p class="text-ink-2 fade-up mt-4" style="font-size: var(--text-lead);">
+        {lede}
+      </p>
+    )
+  }
+</div>

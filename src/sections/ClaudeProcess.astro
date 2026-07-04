@@ -1,0 +1,86 @@
+---
+import { type Locale } from '../i18n/types';
+import { t, useTranslations } from '../i18n/utils';
+import { process } from '../data/process';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const tr = useTranslations(locale);
+---
+
+<section id="process" class="border-line border-t py-20 md:py-28" aria-labelledby="process-title">
+  <div class="container-edge grid gap-12 lg:grid-cols-[1fr_1.35fr]">
+    <!-- sticky intro column -->
+    <div class="lg:sticky lg:top-24 lg:self-start">
+      <p class="eyebrow">{tr('process.eyebrow')}</p>
+      <h2
+        id="process-title"
+        class="text-ink mt-4"
+        style="font-size: var(--text-section); line-height: 1.08;"
+      >
+        {tr('process.title')}
+      </h2>
+      <p class="text-ink-2 mt-4 max-w-[40ch]" style="font-size: var(--text-lead);">
+        {tr('process.lede')}
+      </p>
+      <!-- scroll progress rail (animated in the motion phase) -->
+      <div
+        class="bg-line relative mt-8 hidden h-40 w-px overflow-hidden rounded lg:block"
+        aria-hidden="true"
+      >
+        <div id="process-rail" class="bg-clay absolute top-0 left-0 h-0 w-full"></div>
+      </div>
+    </div>
+
+    <ol class="reveal-group relative flex flex-col gap-4" data-process-steps>
+      {
+        process.map((step) => (
+          <li
+            class="fade-up card process-step hover:border-clay-ring relative p-6 transition-colors duration-300"
+            data-step={step.n}
+          >
+            <div class="flex items-start gap-4">
+              <span
+                class="step-num text-clay border-clay-ring grid h-9 w-9 flex-none place-items-center rounded-full border font-mono text-sm transition-colors duration-300"
+                aria-hidden="true"
+              >
+                {step.n}
+              </span>
+              <div>
+                <h3
+                  class="text-ink text-lg font-semibold"
+                  style="font-family: var(--font-display-active);"
+                >
+                  {t(step.title, locale)}
+                </h3>
+                <p class="text-ink-2 mt-2 text-sm leading-relaxed">{t(step.body, locale)}</p>
+                <div class="mt-3.5 flex flex-wrap gap-1.5">
+                  {step.artifacts.map((a) => (
+                    <span class="bg-clay-tint border-clay-ring text-ink rounded-md border px-2 py-1 font-mono text-[0.67rem]">
+                      {a}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>
+
+<style>
+  .process-step.is-active {
+    border-color: var(--su-clay-ring);
+    background:
+      radial-gradient(120% 150% at 0% 0%, var(--su-clay-tint), transparent 55%), var(--su-surface);
+  }
+  .process-step.is-active .step-num {
+    background: var(--su-clay);
+    color: var(--su-on-clay);
+    border-color: var(--su-clay);
+  }
+</style>

@@ -1,0 +1,40 @@
+---
+import { type Locale } from '../i18n/types';
+import { t, useTranslations } from '../i18n/utils';
+import { stack } from '../data/stack';
+import SectionHeader from '../components/SectionHeader.astro';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const tr = useTranslations(locale);
+---
+
+<section
+  id="stack"
+  class="border-line cv-section border-t py-20 md:py-28"
+  aria-labelledby="stack-title"
+>
+  <div class="container-edge">
+    <SectionHeader eyebrow={tr('stack.eyebrow')} title={tr('stack.title')} id="stack-title" />
+    <div class="reveal-group mt-10 grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
+      {
+        stack.map((group) => (
+          <div class="fade-up">
+            <h3 class="text-ink-3 mb-3.5 font-mono text-[0.7rem] tracking-[0.14em] uppercase">
+              {t(group.title, locale)}
+            </h3>
+            <div class="flex flex-wrap gap-1.5">
+              {group.items.map((item) => (
+                <span class="chip hover:text-ink hover:border-clay-ring transition-colors">
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>

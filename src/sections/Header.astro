@@ -1,0 +1,56 @@
+---
+import { type Locale } from '../i18n/types';
+import { useTranslations, localePath } from '../i18n/utils';
+import ThemeToggle from '../components/ThemeToggle.astro';
+import LangSwitch from '../components/LangSwitch.astro';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+const base = localePath(locale);
+
+const nav = [
+  { href: '#about', label: t('nav.about') },
+  { href: '#process', label: t('nav.process') },
+  { href: '#credentials', label: t('nav.credentials') },
+  { href: '#work', label: t('nav.work') },
+  { href: '#contact', label: t('nav.contact') },
+];
+---
+
+<header class="border-line bg-bg/75 sticky top-0 z-50 border-b backdrop-blur-xl" data-header>
+  <div class="container-edge flex h-15 items-center gap-4">
+    <a href={base} class="flex items-center gap-3" aria-label="Amankeldi Kydyraliev — home">
+      <span
+        class="border-line-strong bg-clay-tint text-clay grid h-8.5 w-8.5 place-items-center rounded-lg border font-mono text-xs"
+      >
+        AK
+      </span>
+      <span class="hidden sm:block">
+        <span class="text-ink block text-sm leading-tight font-semibold">Amankeldi Kydyraliev</span>
+        <span class="text-ink-3 block font-mono text-[0.6rem] tracking-[0.16em] uppercase">
+          Claude Certified Architect
+        </span>
+      </span>
+    </a>
+
+    <nav class="ml-auto flex items-center gap-1.5" aria-label="Primary">
+      <div class="hidden items-center md:flex">
+        {
+          nav.map((item) => (
+            <a
+              href={item.href}
+              class="text-ink-2 hover:text-ink hover:bg-surface rounded-md px-2.5 py-2 font-mono text-[0.72rem] tracking-wider uppercase transition-colors"
+            >
+              {item.label}
+            </a>
+          ))
+        }
+      </div>
+      <LangSwitch locale={locale} />
+      <ThemeToggle label={t('a11y.themeToggle')} />
+    </nav>
+  </div>
+</header>

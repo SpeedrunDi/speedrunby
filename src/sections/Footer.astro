@@ -1,0 +1,36 @@
+---
+import { type Locale } from '../i18n/types';
+import { useTranslations } from '../i18n/utils';
+import { profile } from '../data/profile';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+const year = new Date().getFullYear();
+---
+
+<footer class="border-line border-t py-9">
+  <div class="container-edge flex flex-wrap items-center justify-between gap-4">
+    <div class="text-ink-3 flex items-center gap-3 font-mono text-xs">
+      <span
+        class="border-line-strong bg-clay-tint text-clay grid h-8 w-8 place-items-center rounded-lg border text-[0.7rem]"
+      >
+        AK
+      </span>
+      <span>Amankeldi Kydyraliev · Bishkek, KG · © {year}</span>
+    </div>
+    <p class="text-ink-3 font-mono text-xs">
+      {t('footer.built')} ·
+      <a
+        href={profile.repo}
+        target="_blank"
+        rel="noopener"
+        class="text-clay border-clay-ring hover:text-clay-bright border-b"
+      >
+        {t('footer.source')}
+      </a>
+    </p>
+  </div>
+</footer>
