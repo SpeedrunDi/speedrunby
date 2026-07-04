@@ -1,5 +1,22 @@
-// Small interactive chrome: theme toggle, copy-email, header elevation.
+// Small interactive chrome: theme toggle, copy-email, header elevation,
+// plus the instant 2D dot-portrait paint (shared with the WebGL upgrade).
 // Motion extras (magnetic buttons, tilt, counters) load in motion.ts.
+import { paintStaticPortrait } from './portrait-dots';
+
+async function initPortraitDots() {
+  const canvas = document.getElementById('portrait-canvas') as HTMLCanvasElement | null;
+  if (!canvas) return;
+  try {
+    const field = await paintStaticPortrait(canvas, '/images/portrait.webp');
+    // the WebGL scene reuses the sampled field (no double decode)
+    (window as unknown as { __portraitField?: unknown }).__portraitField = field;
+    const repaint = () => void paintStaticPortrait(canvas, '/images/portrait.webp');
+    window.addEventListener('resize', repaint, { passive: true });
+    document.addEventListener('themechange', repaint);
+  } catch {
+    /* decode failed — noscript/img fallback territory */
+  }
+}
 
 function initThemeToggle() {
   const btn = document.getElementById('theme-toggle');
@@ -93,3 +110,4 @@ initCopyEmail();
 initHeaderElevation();
 initLangSwitch();
 initProjectsToggle();
+void initPortraitDots();

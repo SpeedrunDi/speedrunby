@@ -1,14 +1,15 @@
 // Lazy bootstrapper for the hero WebGL scene. The three.js chunk loads
-// only when: the hero is visible, the main thread is idle, WebGL exists,
+// only when: the hero is visible, a user gesture happened, WebGL exists,
 // and the user has not asked for reduced motion / reduced data.
+// The static dot portrait (2D canvas, see ui.ts) is already painted by then.
 import { deviceTier, saveData, webglAvailable } from '../../lib/device-tier';
 import type { SceneHandle } from './scene';
+import type { DotField } from '../../scripts/portrait-dots';
 
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 export function mountHeroScene() {
   const constellationCanvas = document.getElementById('hero-canvas') as HTMLCanvasElement | null;
-  const portraitImg = document.getElementById('hero-portrait') as HTMLImageElement | null;
   if (!constellationCanvas) return;
   if (reduced || saveData() || !webglAvailable()) return; // static fallback stays
 
@@ -30,27 +31,23 @@ export function mountHeroScene() {
       constellationCanvas.style.opacity = '1';
       handles.push(constellation);
 
-      // portrait depth-parallax: fine pointers only (pointless on touch)
-      if (portraitImg && window.matchMedia('(pointer: fine)').matches) {
-        const box = portraitImg.parentElement!;
-        const canvas = document.createElement('canvas');
-        canvas.setAttribute('aria-hidden', 'true');
-        canvas.style.cssText =
-          'position:absolute;inset:0;width:100%;height:100%;z-index:11;opacity:0;transition:opacity .8s ease;';
-        // same visual treatment as the img (bottom fade)
-        canvas.style.maskImage = 'linear-gradient(to bottom, black 82%, transparent 99%)';
-        box.appendChild(canvas);
-        const portrait = scene.initPortrait(
-          canvas,
-          '/images/portrait.webp',
-          '/images/portrait-depth.webp',
-          portraitImg.naturalWidth / portraitImg.naturalHeight,
-        );
+      // living particle portrait: upgrade the static 2D dots in place.
+      // The sampler result is shared via ui.ts (window.__portraitField).
+      const staticCanvas = document.getElementById('portrait-canvas') as HTMLCanvasElement | null;
+      const field = (window as unknown as { __portraitField?: DotField }).__portraitField;
+      if (staticCanvas && field && window.matchMedia('(pointer: fine)').matches) {
+        const box = staticCanvas.parentElement!;
+        const live = document.createElement('canvas');
+        live.setAttribute('aria-hidden', 'true');
+        live.style.cssText =
+          'position:absolute;inset:0;width:100%;height:100%;opacity:0;transition:opacity .6s ease;';
+        box.appendChild(live);
+        const portrait = scene.initParticlePortrait(live, field);
         handles.push(portrait);
         requestAnimationFrame(() => {
-          canvas.style.opacity = '1';
-          portraitImg.style.opacity = '0'; // stays in DOM for a11y/fallback
-          portraitImg.style.transition = 'opacity .8s ease';
+          live.style.opacity = '1';
+          staticCanvas.style.opacity = '0';
+          staticCanvas.style.transition = 'opacity .6s ease';
         });
       }
 
