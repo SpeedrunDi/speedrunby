@@ -368,7 +368,8 @@ export function initParticlePortrait(canvas: HTMLCanvasElement, field: DotField)
         pos.xy += normalize(d + 1e-5) * push;
         vNear = smoothstep(0.2, 0.0, dist);
         gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-        float r = 0.08 + pow(aLum, 0.8) * 0.46;
+        // keep in sync with DOT_R_MIN / DOT_R_SCALE in portrait-dots.ts
+        float r = 0.15 + pow(aLum, 0.8) * 0.41;
         gl_PointSize = r * uCell * 2.0 * (1.0 + vNear * 0.35);
       }
     `,
@@ -395,7 +396,8 @@ export function initParticlePortrait(canvas: HTMLCanvasElement, field: DotField)
         float d = length(gl_PointCoord - 0.5);
         float disc = smoothstep(0.5, 0.18, d);
         vec3 col = mix(rampDark(vLum), rampLight(vLum), uLight) * (1.0 + vNear * 0.25);
-        gl_FragColor = vec4(col, disc * min(1.0, 0.55 + vLum * 0.6));
+        // keep in sync with DOT_A_MIN / DOT_A_SCALE in portrait-dots.ts
+        gl_FragColor = vec4(col, disc * min(1.0, 0.68 + vLum * 0.32));
       }
     `,
   });
@@ -411,7 +413,7 @@ export function initParticlePortrait(canvas: HTMLCanvasElement, field: DotField)
   const resize = () => {
     const r = canvas.getBoundingClientRect();
     renderer.setSize(r.width, r.height, false);
-    uniforms.uCell.value = (r.width * Math.min(window.devicePixelRatio, 2)) / 96;
+    uniforms.uCell.value = (r.width * Math.min(window.devicePixelRatio, 2)) / field.cols;
   };
   resize();
   window.addEventListener('resize', resize);
