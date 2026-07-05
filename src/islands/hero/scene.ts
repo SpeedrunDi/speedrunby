@@ -1,7 +1,9 @@
 // The hero WebGL world — the ONLY chunk that imports three.
-// Two renderers: a full-hero "agent orchestration" constellation and a
-// depth-parallax portrait plane (Facebook-3D-photo technique). Everything
-// is uniform-driven: no per-frame allocations, no neighbour searches.
+// A full-hero "agent orchestration" constellation that doubles as a live,
+// legible multi-agent trace (dispatch → tool_call → result → PASS →
+// synthesize) and answers a pointer poke. Everything is uniform-driven:
+// no per-frame allocations, no neighbour searches (poke runs its search
+// once per click, never per frame).
 import * as THREE from 'three';
 import type { Tier } from '../../lib/device-tier';
 
@@ -10,6 +12,14 @@ export interface SceneHandle {
   setTheme(): void;
   pause(): void;
   resume(): void;
+  /** Fire a signal from the node nearest the pointer (client coords). */
+  poke(clientX: number, clientY: number): void;
+}
+
+// clamp01-smoothstep — soft ease for the signal head and blooms
+function sstep(x: number): number {
+  const t = Math.max(0, Math.min(1, x));
+  return t * t * (3 - 2 * t);
 }
 
 /* ---------------- helpers ---------------- */
@@ -58,10 +68,15 @@ export function initConstellation(canvas: HTMLCanvasElement, tier: Tier): SceneH
     { cx: 0.9, cy: 0.14, r: 0.07, count: tier === 'high' ? 90 : 45 },
   ];
 
+  // arrival-bloom is the one shader change; keep its runtime cost off on
+  // low-tier devices (the uniforms compile either way, the effect stays 0)
+  const bloomOn = tier === 'high';
+
   const total = clusters.reduce((s, c) => s + c.count, 0);
   const positions = new Float32Array(total * 3);
   const sizes = new Float32Array(total);
   const phases = new Float32Array(total);
+  const clusterId = new Float32Array(total);
   let p = 0;
   clusters.forEach((c, ci) => {
     for (let i = 0; i < c.count; i++) {
@@ -73,6 +88,7 @@ export function initConstellation(canvas: HTMLCanvasElement, tier: Tier): SceneH
       positions[p * 3 + 2] = prand(seed + 0.7);
       sizes[p] = 1.5 + prand(seed + 0.3) * 2.6;
       phases[p] = prand(seed + 0.9) * Math.PI * 2;
+      clusterId[p] = ci;
       p++;
     }
   });
@@ -81,6 +97,7 @@ export function initConstellation(canvas: HTMLCanvasElement, tier: Tier): SceneH
   pointsGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   pointsGeo.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
   pointsGeo.setAttribute('aPhase', new THREE.BufferAttribute(phases, 1));
+  pointsGeo.setAttribute('aCluster', new THREE.BufferAttribute(clusterId, 1));
 
   const uniforms = {
     uTime: { value: 0 },
@@ -88,6 +105,10 @@ export function initConstellation(canvas: HTMLCanvasElement, tier: Tier): SceneH
     uClay: { value: cssColor('--su-clay') },
     uBright: { value: cssColor('--su-clay-bright') },
     uDpr: { value: Math.min(window.devicePixelRatio, dprCap) },
+    // live-trace arrival bloom: which cluster is lighting, and how hard
+    uActiveNode: { value: -1 },
+    uActiveAmt: { value: 0 },
+    uGate: { value: 0 },
   };
 
   const pointsMat = new THREE.ShaderMaterial({
@@ -98,11 +119,16 @@ export function initConstellation(canvas: HTMLCanvasElement, tier: Tier): SceneH
     vertexShader: /* glsl */ `
       attribute float aSize;
       attribute float aPhase;
+      attribute float aCluster;
       uniform float uTime;
       uniform vec2 uPointer;
       uniform float uDpr;
+      uniform float uActiveNode;
+      uniform float uActiveAmt;
+      uniform float uGate;
       varying float vDepth;
       varying float vGlow;
+      varying float vActive;
       void main() {
         vec3 pos = position;
         // gentle drift
@@ -115,21 +141,31 @@ export function initConstellation(canvas: HTMLCanvasElement, tier: Tier): SceneH
         pos.xy += normalize(d + 1e-5) * pull;
         vGlow = smoothstep(0.22, 0.0, dist);
         vDepth = position.z;
+        // 1.0 for points in the currently-active trace cluster, else 0.0
+        vActive = step(abs(aCluster - uActiveNode), 0.5);
         gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-        gl_PointSize = aSize * uDpr * (0.75 + vDepth * 0.5 + vGlow * 0.8);
+        gl_PointSize = aSize * uDpr
+          * (0.75 + vDepth * 0.5 + vGlow * 0.8)
+          * (1.0 + vActive * (uActiveAmt * 0.5 + uGate * 0.5));
       }
     `,
     fragmentShader: /* glsl */ `
       uniform vec3 uClay;
       uniform vec3 uBright;
+      uniform float uActiveAmt;
+      uniform float uGate;
       varying float vDepth;
       varying float vGlow;
+      varying float vActive;
       void main() {
         vec2 uv = gl_PointCoord - 0.5;
         float d = length(uv);
         float disc = smoothstep(0.5, 0.12, d);
         vec3 col = mix(uClay, uBright, vDepth * 0.6 + vGlow * 0.4);
-        gl_FragColor = vec4(col, disc * (0.35 + vDepth * 0.35 + vGlow * 0.45));
+        // arrival bloom — 0 at rest, so the resting field is unchanged
+        float bloom = vActive * (uActiveAmt * 0.32 + uGate * 0.48);
+        col = mix(col, uBright, min(1.0, bloom));
+        gl_FragColor = vec4(col, disc * (0.35 + vDepth * 0.35 + vGlow * 0.45) + bloom * disc);
       }
     `,
   });
@@ -171,17 +207,23 @@ export function initConstellation(canvas: HTMLCanvasElement, tier: Tier): SceneH
       if (a !== b) pushEdge(a, b);
     }
   });
-  // spokes: orchestrator core → each satellite core
+  // spokes: orchestrator core → each satellite core. Capture one spoke edge
+  // per satellite so the live trace can address orchestrator↔role hops.
+  // A-endpoint (aT=0) is the orchestrator, B-endpoint (aT=1) the satellite,
+  // so uPulseT 0→1 travels OUT and 1→0 travels IN — no shader change.
+  const roleSpokes: number[][] = clusters.map(() => []);
   for (let ci = 1; ci < clusters.length; ci++) {
     for (let s = 0; s < 3; s++) {
       const a = clusterOffsets[0] + Math.floor(prand(ci * 13 + s) * clusters[0].count);
       const b = clusterOffsets[ci] + Math.floor(prand(ci * 31 + s) * clusters[ci].count);
+      roleSpokes[ci].push(edgeCount);
       pushEdge(a, b);
     }
   }
 
+  const edgePos = new Float32Array(edgeVerts);
   const edgeGeo = new THREE.BufferGeometry();
-  edgeGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(edgeVerts), 3));
+  edgeGeo.setAttribute('position', new THREE.BufferAttribute(edgePos, 3));
   edgeGeo.setAttribute('aT', new THREE.BufferAttribute(new Float32Array(edgeT), 1));
   edgeGeo.setAttribute('aEdge', new THREE.BufferAttribute(new Float32Array(edgeIndex), 1));
 
@@ -248,29 +290,199 @@ export function initConstellation(canvas: HTMLCanvasElement, tier: Tier): SceneH
   resize();
   window.addEventListener('resize', resize);
 
+  /* ----- live-trace overlay (role labels), behind copy/portrait ----- */
+  // cluster index → role token; identical in RU/EN by design (system
+  // identifiers), decorative + aria-hidden, so no i18n string needed.
+  const ROLE_TOKENS = ['orchestrator', 'research', 'code', 'mcp tools', 'review gate', 'operate'];
+  const host = canvas.parentElement; // .hero-bg (-z-10, aria-hidden)
+  let overlay: HTMLDivElement | null = null;
+  let labelEl: HTMLSpanElement | null = null;
+  if (host) {
+    overlay = document.createElement('div');
+    overlay.className = 'trace-overlay';
+    overlay.setAttribute('aria-hidden', 'true');
+    labelEl = document.createElement('span');
+    labelEl.className = 'trace-label';
+    overlay.appendChild(labelEl);
+    host.appendChild(overlay);
+  }
+  let lastLabel = '';
+  const showLabel = (text: string, opacity: number, cluster: number) => {
+    if (!labelEl) return;
+    if (text && text !== lastLabel) {
+      labelEl.textContent = text;
+      const r = canvas.getBoundingClientRect();
+      const c = clusters[cluster];
+      // project cluster centre to screen; clamp inside the hero box (the
+      // overlay is -z-10, so any residual overlap paints behind the copy)
+      const lx = Math.max(14, Math.min(r.width - 150, c.cx * r.width));
+      const ly = Math.max(14, Math.min(r.height - 26, (1 - c.cy) * r.height));
+      labelEl.style.left = `${lx}px`;
+      labelEl.style.top = `${ly}px`;
+      lastLabel = text;
+    }
+    labelEl.style.opacity = String(opacity);
+  };
+
+  /* ----- deterministic trace script (offset from a monotonic accumulator,
+     never THREE.Clock.getElapsedTime — which resets on resume) ----- */
+  interface Hop {
+    verb: string;
+    cluster: number; // satellite cluster the spoke reaches
+    dir: 1 | -1; // 1 = out (orch→role), -1 = in (role→orch)
+    hold: number; // dwell after arrival before the next hop
+    gate?: boolean; // the review-gate PASS beat
+  }
+  const HOPS: Hop[] = [
+    { verb: 'dispatch', cluster: 1, dir: 1, hold: 0.6 },
+    { verb: 'tool_call', cluster: 3, dir: 1, hold: 0.6 },
+    { verb: 'result', cluster: 3, dir: -1, hold: 0.6 },
+    { verb: 'build', cluster: 2, dir: 1, hold: 0.6 },
+    { verb: 'review · PASS', cluster: 4, dir: 1, hold: 0.9, gate: true },
+    { verb: 'synthesize', cluster: 5, dir: 1, hold: 0.6 },
+  ];
+  const TRAVEL = 1.1;
+  const FINAL_GAP = 1.0;
+  const sched = HOPS.map((h) => ({ h, t0: 0, travelEnd: 0, end: 0 }));
+  let acc = 0;
+  for (const s of sched) {
+    s.t0 = acc;
+    s.travelEnd = acc + TRAVEL;
+    acc += TRAVEL + s.h.hold;
+    s.end = acc;
+  }
+  const LOOP = acc + FINAL_GAP; // ~11.5s — non-harmonic with the 7s/2.6s CSS loops
+
+  /* ----- loop, poke, lifecycle ----- */
   let raf = 0;
   let running = false;
-  let pulseEdge = Math.floor(prand(1) * edgeCount);
-  let pulseStart = 0;
+  let animTime = 0; // monotonic; drives drift + pointer, survives resume
+  let traceTime = 0; // monotonic; frozen while poking → seamless resume
+  let poking = false;
+  let pokeEdge = -1;
+  let pokeStart = 0;
+  let pokeRelays = 0;
+  let lastPokeAt = -1;
+  const POKE_DUR = 0.9;
+  const POKE_RELAYS = 1;
   const clock = new THREE.Clock();
+
+  const nearestAEdge = (x: number, y: number, exclude: number): number => {
+    let best = -1;
+    let bd = Infinity;
+    for (let e = 0; e < edgeCount; e++) {
+      if (e === exclude) continue;
+      const dx = edgePos[e * 6] - x;
+      const dy = edgePos[e * 6 + 1] - y;
+      const d = dx * dx + dy * dy;
+      if (d < bd) {
+        bd = d;
+        best = e;
+      }
+    }
+    return best;
+  };
+
+  const pokeAt = (clientX: number, clientY: number) => {
+    if (!running) return;
+    if (animTime - lastPokeAt < 0.2) return; // throttle
+    const r = canvas.getBoundingClientRect();
+    const px = (clientX - r.left) / r.width;
+    const py = 1 - (clientY - r.top) / r.height;
+    // nearest edge A-endpoint (the T=0 departure node)
+    let best = -1;
+    let bd = Infinity;
+    for (let e = 0; e < edgeCount; e++) {
+      const dx = edgePos[e * 6] - px;
+      const dy = edgePos[e * 6 + 1] - py;
+      const d = dx * dx + dy * dy;
+      if (d < bd) {
+        bd = d;
+        best = e;
+      }
+    }
+    if (best < 0 || bd > 0.09) return; // dead-zone: no far, disconnected signal
+    lastPokeAt = animTime;
+    poking = true;
+    pokeEdge = best;
+    pokeStart = animTime;
+    pokeRelays = POKE_RELAYS;
+    target.set(px, py);
+  };
 
   const frame = () => {
     if (!running) return;
-    const t = clock.getElapsedTime();
-    uniforms.uTime.value = t;
+    const dt = clock.getDelta(); // ~0 right after start() → no jump on resume
+    animTime += dt;
+    if (!poking) traceTime += dt;
+    uniforms.uTime.value = animTime;
     uniforms.uPointer.value.lerp(target, 0.06);
-    // a signal travels one random edge every ~2.2s
-    const cycle = 2.2;
-    const local = (t - pulseStart) / 1.1;
-    if (local >= 1 && t - pulseStart > cycle) {
-      pulseStart = t;
-      pulseEdge = Math.floor(prand(t) * edgeCount);
+
+    if (poking) {
+      // preempt the trace: the signal answers under the finger, forwards once
+      const lp = (animTime - pokeStart) / POKE_DUR;
+      if (lp >= 1) {
+        if (pokeRelays > 0) {
+          const bx = edgePos[pokeEdge * 6 + 3];
+          const by = edgePos[pokeEdge * 6 + 4];
+          pokeEdge = nearestAEdge(bx, by, pokeEdge);
+          pokeStart = animTime;
+          pokeRelays--;
+        } else {
+          poking = false; // trace resumes from its frozen phase, no jump
+        }
+      }
+      if (poking) {
+        edgeUniforms.uPulseEdge.value = pokeEdge;
+        edgeUniforms.uPulseT.value = Math.min(1, (animTime - pokeStart) / POKE_DUR);
+        uniforms.uActiveAmt.value = 0;
+        uniforms.uGate.value = 0;
+        showLabel('', 0, -1);
+      }
     }
-    edgeUniforms.uPulseEdge.value = pulseEdge;
-    edgeUniforms.uPulseT.value = Math.min(local, 1);
+
+    if (!poking) {
+      const tt = traceTime % LOOP;
+      let hopFound = false;
+      for (const s of sched) {
+        if (tt >= s.t0 && tt < s.end) {
+          hopFound = true;
+          const edge = roleSpokes[s.h.cluster][0];
+          const eased = sstep((tt - s.t0) / TRAVEL); // 0→1 over travel, 1 in hold
+          edgeUniforms.uPulseEdge.value = edge;
+          edgeUniforms.uPulseT.value = s.h.dir === 1 ? eased : 1 - eased;
+          const activeNode = s.h.dir === 1 ? s.h.cluster : 0;
+          // arrival bloom: ramp ~220ms after arrival, decay ~520ms
+          const ta = tt - s.travelEnd;
+          let amt = 0;
+          if (ta >= 0) amt = ta < 0.22 ? ta / 0.22 : Math.max(0, 1 - (ta - 0.22) / 0.52);
+          uniforms.uActiveNode.value = activeNode;
+          uniforms.uActiveAmt.value = bloomOn ? amt : 0;
+          uniforms.uGate.value = bloomOn && s.h.gate && ta >= 0 ? 1 : 0;
+          showLabel(ROLE_TOKENS[activeNode], s.h.gate ? 0.7 : 0.6, activeNode);
+          break;
+        }
+      }
+      if (!hopFound) {
+        // quiet gap before the loop restarts — let the eye rest
+        edgeUniforms.uPulseEdge.value = -1;
+        uniforms.uActiveAmt.value = 0;
+        uniforms.uGate.value = 0;
+        showLabel('', 0, -1);
+      }
+    }
+
     renderer.render(scene, camera);
     raf = requestAnimationFrame(frame);
   };
+
+  const section = canvas.closest('section');
+  const onClick = (e: MouseEvent) => {
+    const el = e.target as HTMLElement | null;
+    if (el?.closest('a,button,[role="button"],input,label,summary')) return; // CTAs stay clean
+    pokeAt(e.clientX, e.clientY);
+  };
+  section?.addEventListener('click', onClick, { passive: true });
 
   const handle: SceneHandle = {
     pause() {
@@ -280,17 +492,22 @@ export function initConstellation(canvas: HTMLCanvasElement, tier: Tier): SceneH
     resume() {
       if (running) return;
       running = true;
-      clock.start();
+      clock.start(); // resets Clock.elapsedTime — harmless, we use getDelta()
       raf = requestAnimationFrame(frame);
     },
     setTheme() {
       uniforms.uClay.value = cssColor('--su-clay');
       uniforms.uBright.value = cssColor('--su-clay-bright');
     },
+    poke(clientX: number, clientY: number) {
+      pokeAt(clientX, clientY);
+    },
     destroy() {
       this.pause();
       window.removeEventListener('pointermove', onPointer);
       window.removeEventListener('resize', resize);
+      section?.removeEventListener('click', onClick);
+      overlay?.remove();
       pointsGeo.dispose();
       edgeGeo.dispose();
       pointsMat.dispose();
