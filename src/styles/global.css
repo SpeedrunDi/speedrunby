@@ -241,6 +241,37 @@ html[lang='ru'] {
     color: var(--su-ink-2);
   }
 
+  /* live-trace role labels (created by the hero scene chunk, so they exist
+     only when the WebGL scene boots — never under reduced-motion). The
+     overlay lives inside .hero-bg (-z-10, aria-hidden): labels paint behind
+     the copy/portrait, never over them. Desktop only — the mobile hero has
+     no negative space to spare. Colours come from tokens so theme switches
+     recolour them via the cascade (no JS resync). */
+  .trace-overlay {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .trace-label {
+    position: absolute;
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--su-ink-3);
+    opacity: 0;
+    white-space: nowrap;
+    transition:
+      opacity 0.34s var(--ease-premium),
+      transform 0.34s var(--ease-premium);
+  }
+  @media (max-width: 1023px) {
+    .trace-overlay {
+      display: none;
+    }
+  }
+
   /* skip rendering below-fold sections until needed */
   .cv-section {
     content-visibility: auto;

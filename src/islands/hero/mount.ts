@@ -29,6 +29,9 @@ export function mountHeroScene() {
       constellationCanvas.style.opacity = '1';
       handles.push(constellation);
 
+      // boot signal for e2e determinism (scene is gesture+idle gated)
+      (window as unknown as { __heroReady?: boolean }).__heroReady = true;
+
       // run only while the hero is on screen and the tab is visible
       const io = new IntersectionObserver(
         ([entry]) => {
