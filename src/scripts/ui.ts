@@ -1,5 +1,7 @@
 // Small interactive chrome: theme toggle, copy-email, header elevation.
 // Motion extras (magnetic buttons, tilt, counters) load in motion.ts.
+import { initConsoleSignature } from './console-sig';
+
 function initThemeToggle() {
   const btn = document.getElementById('theme-toggle');
   if (!btn) return;
@@ -92,3 +94,4 @@ initCopyEmail();
 initHeaderElevation();
 initLangSwitch();
 initProjectsToggle();
+initConsoleSignature();
